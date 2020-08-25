@@ -1,0 +1,1 @@
+from .test_inner_package import say_hello

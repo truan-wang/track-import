@@ -1,5 +1,4 @@
 import imp
-import os
 import sys
 import time
 
@@ -11,11 +10,12 @@ class TimeImport(object):
         self.fp = fp
 
     def find_module(self, fullname, path=None):
-        if path and path[0].startswith(self._lib_root):
-            name = fullname.split(".")[-1]
-            if os.path.exists(os.path.join(path[0], name)) or os.path.exists(os.path.join(path[0], name + ".py")):
-                self.path = path
-                return self
+        name = fullname.split(".")[-1]
+        file, pathname, description = imp.find_module(name, path)
+        if pathname and pathname.startswith(self._lib_root):
+            self._path = path
+            return self
+
         return None
 
     def load_module(self, name_or_package):
@@ -37,13 +37,13 @@ class TimeImport(object):
                 path = module.__path__
             else:
                 name = name_or_package
-                path = self.path
+                path = self._path
 
             file, pathname, description = imp.find_module(name, path)
             module = imp.load_module(name_or_package, file, pathname, description)
             sys.modules[name_or_package] = module
             return module
-        except Exception, e:
+        except Exception as e:
             sys.stderr.write("IMPORT ERROR: %s " % e + "*" * 10)
             raise e
         finally:
@@ -57,8 +57,3 @@ class TimeImport(object):
                 "\n"
             )
 
-
-sys.meta_path.insert(0, TimeImport(
-    "/Users/truan.wang/workspace/justing",
-    sys.stdout
-))
